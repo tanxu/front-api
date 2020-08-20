@@ -24,6 +24,17 @@ class LoginController{
     }
 
   }
+
+  async login(ctx){
+    // 1. 接收用户的数据
+    // 2. 验证图片验证码的时效性，正确性
+    // 3. 验证用户账号密码是否则会个你却
+    // 4. 返回token
+    ctx.body = {
+      code: 200,
+      mes: '登录成功'
+    }
+  }
 }
 
 export default new LoginController()
