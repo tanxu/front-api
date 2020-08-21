@@ -42,7 +42,7 @@ class LoginController {
 
       // 3. 验证用户账号密码是否正确
       let checkUserPasspwd = null
-      const user = UserModel.findOne({username})
+      const user = await UserModel.findOne({username})
       if(user.password === body.password){
         checkUserPasspwd=true
       }
