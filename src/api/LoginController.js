@@ -2,6 +2,8 @@ import send from '../config/MailConfig'
 import moment from "moment";
 import jsonwebtoken from 'jsonwebtoken'
 import config from '../config'
+import {checkCode} from "../common/utils";
+import UserModel from "../model/User";
 
 class LoginController {
   constructor() {
@@ -30,23 +32,52 @@ class LoginController {
 
   async login(ctx) {
     // 1. 接收用户的数据
+    const {body} = ctx.request
+    const sid = body.sid
+    const code = body.code
+    const username = body.username
     // 2. 验证图片验证码的时效性，正确性
-    // 3. 验证用户账号密码是否则会个你却
-    // 4. 返回token
-    // const token = jsonwebtoken.sign({
-    //   _id: 'brain',
-    //   exp: Math.floor((Date.now() / 1000) + 60 * 60 * 24) // 一天
-    // }, config.JWT_SECRET)
-    const token = jsonwebtoken.sign({
-      _id: 'brain'
-    }, config.JWT_SECRET, {
-      expiresIn: '1d' // 一天
-    })
-    ctx.body = {
-      code: 200,
-      token: token,
-      mes: '登录成功'
+    if(await checkCode(sid, code)){
+      console.log('check ok')
+
+      // 3. 验证用户账号密码是否正确
+      let checkUserPasspwd = null
+      const user = UserModel.findOne({username})
+      if(user.password === body.password){
+        checkUserPasspwd=true
+      }
+      if(checkUserPasspwd){
+        // 4. 返回token
+        // const token = jsonwebtoken.sign({
+        //   _id: 'brain',
+        //   exp: Math.floor((Date.now() / 1000) + 60 * 60 * 24) // 一天
+        // }, config.JWT_SECRET)
+        const token = jsonwebtoken.sign({
+          _id: 'brain'
+        }, config.JWT_SECRET, {
+          expiresIn: '1d' // 一天
+        })
+        ctx.body = {
+          code: 200,
+          token: token,
+          msg: '登录成功'
+        }
+      }else{
+        // 用户名，密码验证失败
+        ctx.body = {
+          code: 404,
+          msg: '用户名或密码错误！'
+        }
+      }
+
+    }else{
+      ctx.body = {
+        code: 401,
+        msg: '图片验证码校验失败！'
+      }
     }
+
+
   }
 }
 
