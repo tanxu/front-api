@@ -1,11 +1,13 @@
-import send from '../config/MailConfig'
 import moment from "moment";
+import bcrypt from 'bcrypt'
 import jsonwebtoken from 'jsonwebtoken'
+
+import send from '../config/MailConfig'
 import config from '../config'
 import {checkCode} from "../common/utils";
 import UserModel from "../model/User";
 
-import { PassHandle } from "../common/crypto";
+// import { PassHandle } from "../common/crypto";
 
 class LoginController {
   constructor() {
@@ -39,22 +41,18 @@ class LoginController {
     const code = body.code
     const username = body.username
     const password = body.password
-    const enpassword = PassHandle.getAES(password)
     // 2. 验证图片验证码的时效性，正确性
     const result = await checkCode(sid, code)
     if (result) {
       // 3. 验证用户账号密码是否正确
       let checkUserPasspwd = null
       const user = await UserModel.findOne({username})
-      if (user && user.password === enpassword) {
-        checkUserPasspwd = true
-      }
+      // 对比密码
+      const comparePassword = await bcrypt.compare(password, user.password)
+      // 如果密码输入正确
+      if (comparePassword) checkUserPasspwd = true
       if (checkUserPasspwd) {
         // 4. 返回token
-        // const token = jsonwebtoken.sign({
-        //   _id: 'brain',
-        //   exp: Math.floor((Date.now() / 1000) + 60 * 60 * 24) // 一天
-        // }, config.JWT_SECRET)
         const token = jsonwebtoken.sign({
           _id: 'brain'
         }, config.JWT_SECRET, {
@@ -93,8 +91,7 @@ class LoginController {
     const username = body.username
     const nickname = body.nickname
     const password = body.password
-    const enpassword = PassHandle.getAES(password)
-    const depassword = PassHandle.getDAes(enpassword)
+    const enpassword = await bcrypt.hash(password, 5)
     let msg = {}
     // 2. 验证图片验证码的时效性，正确性
     const result = await checkCode(sid, code)
