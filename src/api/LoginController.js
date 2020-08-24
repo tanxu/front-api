@@ -5,6 +5,8 @@ import config from '../config'
 import {checkCode} from "../common/utils";
 import UserModel from "../model/User";
 
+import { PassHandle } from "../common/crypto";
+
 class LoginController {
   constructor() {
   }
@@ -36,17 +38,18 @@ class LoginController {
     const sid = body.sid
     const code = body.code
     const username = body.username
+    const password = body.password
+    const enpassword = PassHandle.getAES(password)
     // 2. 验证图片验证码的时效性，正确性
-    if(await checkCode(sid, code)){
-      console.log('check ok')
-
+    const result = await checkCode(sid, code)
+    if (result) {
       // 3. 验证用户账号密码是否正确
       let checkUserPasspwd = null
       const user = await UserModel.findOne({username})
-      if(user.password === body.password){
-        checkUserPasspwd=true
+      if (user && user.password === enpassword) {
+        checkUserPasspwd = true
       }
-      if(checkUserPasspwd){
+      if (checkUserPasspwd) {
         // 4. 返回token
         // const token = jsonwebtoken.sign({
         //   _id: 'brain',
@@ -62,21 +65,75 @@ class LoginController {
           token: token,
           msg: '登录成功'
         }
-      }else{
+      } else {
         // 用户名，密码验证失败
         ctx.body = {
-          code: 404,
+          code: 500,
           msg: '用户名或密码错误！'
         }
       }
 
-    }else{
+    } else {
       ctx.body = {
         code: 401,
         msg: '图片验证码校验失败！'
       }
     }
 
+
+  }
+
+
+  async reg(ctx) {
+    // 1. 接收客户端的参数
+    const {body} = ctx.request
+    // 2. 校验验证码的内容， 时效性 有效性
+    const sid = body.sid
+    const code = body.code
+    const username = body.username
+    const nickname = body.nickname
+    const password = body.password
+    const enpassword = PassHandle.getAES(password)
+    const depassword = PassHandle.getDAes(enpassword)
+    let msg = {}
+    // 2. 验证图片验证码的时效性，正确性
+    const result = await checkCode(sid, code)
+    let check = true
+    if (result) {
+      // 3. 查库， username是否被注册
+      let user1 = await UserModel.findOne({username: username})
+      if (user1 && typeof user1.username !== 'undefined') {
+        msg.username = ['此邮箱已经被注册，可以通过邮箱找回密码！']
+        check = false
+      }
+      // 4. 查库， nickname是否被注册
+      let user2 = await UserModel.findOne({nickname: nickname})
+      if (user2 && typeof user2.username !== 'undefined') {
+        msg.username = ['此昵称已经被注册，请修改！']
+        check = false
+      }
+      if (check) {
+        // 5. 写入数据到数据库
+        let user = new UserModel({
+          username: username,
+          nickname: nickname,
+          password: enpassword
+        })
+        const result = await user.save()
+        ctx.body = {
+          code: 200,
+          data: result,
+          msg: '注册成功'
+        }
+      }
+    } else {
+      // validate 显示的错误
+      msg.vercode = ['验证码已经失效，请重新获取！']
+      ctx.body = {
+        code: 401,
+        msg: msg
+      }
+    }
 
   }
 }
