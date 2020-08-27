@@ -53,6 +53,11 @@ class LoginController {
       if (comparePassword) checkUserPasspwd = true
       if (checkUserPasspwd) {
         // 4. 返回token
+        const userObj = user.toJSON()
+        const arr = ['password', 'username', 'roles']
+        arr.map(item=>{
+          delete userObj[item]
+        })
         const token = jsonwebtoken.sign({
           _id: 'brain'
         }, config.JWT_SECRET, {
@@ -61,6 +66,7 @@ class LoginController {
         ctx.body = {
           code: 200,
           token: token,
+          data: userObj,
           msg: '登录成功'
         }
       } else {

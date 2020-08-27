@@ -6,7 +6,6 @@ class PublickController{
   }
   async getCapthca(ctx){
     const sid = ctx.request.query.sid
-    console.log('sid', sid)
     const captcha = svgCaptcha.create({
       width: 150,
       height:38,
