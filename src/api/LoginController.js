@@ -59,7 +59,7 @@ class LoginController {
           delete userObj[item]
         })
         const token = jsonwebtoken.sign({
-          _id: 'brain'
+          _id: userObj._id
         }, config.JWT_SECRET, {
           expiresIn: '1d' // 一天
         })

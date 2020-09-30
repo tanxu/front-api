@@ -1,4 +1,4 @@
-import mongoose from '@/config/DBHelpler'
+import mongoose from '../config/DBHelper'
 import moment from 'moment'
 const Schema = mongoose.Schema
 
@@ -21,11 +21,13 @@ const UserSchema = new Schema({
 })
 
 UserSchema.pre('save', function (next) {
+  console.log('UserSchema saved')
   this.create_time = moment().format('YYYY-MM-DD HH:mm:ss')
   next()
 })
 
 UserSchema.pre('update', function (next) {
+  console.log('UserSchema updated')
   this.update_time = moment().format('YYYY-MM-DD HH:mm:ss')
   next()
 })
